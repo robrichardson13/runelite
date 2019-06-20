@@ -117,9 +117,12 @@ public class ChatNotificationsPlugin extends Plugin
 		{
 			List<String> items = Text.fromCSV(config.highlightWordsString());
 			String joined = items.stream()
+				.map(Text::escapeJagex) // we compare these strings to the raw Jagex ones
 				.map(Pattern::quote)
 				.collect(Collectors.joining("|"));
-			highlightMatcher = Pattern.compile("\\b(" + joined + ")\\b", Pattern.CASE_INSENSITIVE);
+			// To match <word> \b doesn't work due to <> not being in \w,
+			// so match \b or \s
+			highlightMatcher = Pattern.compile("(?:\\b|(?<=\\s))(" + joined + ")(?:\\b|(?=\\s))", Pattern.CASE_INSENSITIVE);
 		}
 	}
 
@@ -127,24 +130,23 @@ public class ChatNotificationsPlugin extends Plugin
 	public void onChatMessage(ChatMessage chatMessage)
 	{
 		MessageNode messageNode = chatMessage.getMessageNode();
-		String nodeValue = Text.removeTags(messageNode.getValue());
 		boolean update = false;
 
 		switch (chatMessage.getType())
 		{
-			case TRADE:
+			case TRADEREQ:
 				if (chatMessage.getMessage().contains("wishes to trade with you.") && config.notifyOnTrade())
 				{
 					notifier.notify(chatMessage.getMessage());
 				}
 				break;
-			case DUEL:
+			case CHALREQ_TRADE:
 				if (chatMessage.getMessage().contains("wishes to duel with you.") && config.notifyOnDuel())
 				{
 					notifier.notify(chatMessage.getMessage());
 				}
 				break;
-			case GAME:
+			case CONSOLE:
 				// Don't notify for notification messages
 				if (chatMessage.getName().equals(runeLiteProperties.getTitle()))
 				{
@@ -177,6 +179,7 @@ public class ChatNotificationsPlugin extends Plugin
 
 		if (highlightMatcher != null)
 		{
+			String nodeValue = messageNode.getValue();
 			Matcher matcher = highlightMatcher.matcher(nodeValue);
 			boolean found = false;
 			StringBuffer stringBuffer = new StringBuffer();

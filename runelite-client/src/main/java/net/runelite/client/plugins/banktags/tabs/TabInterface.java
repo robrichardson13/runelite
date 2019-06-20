@@ -50,6 +50,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.Getter;
 import net.runelite.api.Client;
+import net.runelite.api.Constants;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemComposition;
@@ -130,6 +131,8 @@ public class TabInterface
 	private int currentTabIndex;
 	private TagTab iconToSet = null;
 	private Instant startScroll = Instant.now();
+	private String rememberedSearch;
+	private boolean waitSearchTick;
 
 	@Getter
 	private Widget upButton;
@@ -384,6 +387,8 @@ public class TabInterface
 		currentTabIndex = 0;
 		maxTabs = 0;
 		parent = null;
+		waitSearchTick = false;
+		rememberedSearch = "";
 
 		if (upButton != null)
 		{
@@ -400,6 +405,8 @@ public class TabInterface
 		if (isHidden())
 		{
 			parent = null;
+			waitSearchTick = false;
+			rememberedSearch = "";
 
 			// If bank window was just hidden, update last active tab position
 			if (currentTabIndex != config.position())
@@ -462,6 +469,20 @@ public class TabInterface
 		else
 		{
 			activateTab(null);
+		}
+
+		if (!waitSearchTick
+			&& activeTab == null
+			&& !Strings.isNullOrEmpty(rememberedSearch)
+			&& client.getVar(VarClientInt.INPUT_TYPE) == InputType.NONE.getType())
+		{
+			bankSearch.reset(true);
+			bankSearch.search(InputType.NONE, rememberedSearch, true);
+			rememberedSearch = "";
+		}
+		else if (waitSearchTick)
+		{
+			waitSearchTick = false;
 		}
 
 		updateBounds();
@@ -542,6 +563,15 @@ public class TabInterface
 		if (isHidden())
 		{
 			return;
+		}
+
+		if (event.getWidgetId() == WidgetInfo.BANK_ITEM_CONTAINER.getId()
+			&& event.getMenuAction() == MenuAction.EXAMINE_ITEM_BANK_EQ
+			&& event.getMenuOption().equalsIgnoreCase("withdraw-x"))
+		{
+			waitSearchTick = true;
+			rememberedSearch = client.getVar(VarClientStr.INPUT_TEXT);
+			bankSearch.search(InputType.NONE, rememberedSearch, true);
 		}
 
 		if (iconToSet != null)
@@ -692,7 +722,13 @@ public class TabInterface
 
 		if (tagTab.getIcon() == null)
 		{
-			Widget icon = createGraphic(ColorUtil.wrapWithColorTag(tagTab.getTag(), HILIGHT_COLOR), -1, tagTab.getIconItemId(), 36, 32, bounds.x + 3, 1, false);
+			Widget icon = createGraphic(
+				ColorUtil.wrapWithColorTag(tagTab.getTag(), HILIGHT_COLOR),
+				-1,
+				tagTab.getIconItemId(),
+				Constants.ITEM_SPRITE_WIDTH, Constants.ITEM_SPRITE_HEIGHT,
+				bounds.x + 3, 1,
+				false);
 			int clickmask = icon.getClickMask();
 			clickmask |= WidgetConfig.DRAG;
 			clickmask |= WidgetConfig.DRAG_ON;

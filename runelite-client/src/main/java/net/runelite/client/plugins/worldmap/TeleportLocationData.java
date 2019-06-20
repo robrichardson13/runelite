@@ -61,6 +61,7 @@ enum TeleportLocationData
 	ICE_PLATEAU(TeleportType.LUNAR_MAGIC, "Ice Plateau", 89, new WorldPoint(2973, 3939, 0), "ice_plateau_teleport_icon.png"),
 	LUMBRIDGE_GRAVEYARD(TeleportType.ARCEUUS_MAGIC, "Lumbridge Graveyard", 6, new WorldPoint(3241, 3194, 0), "lumbridge_graveyard_teleport_icon.png"),
 	DRAYNOR_MANOR(TeleportType.ARCEUUS_MAGIC, "Draynor Manor", 17, new WorldPoint(3108, 3352, 0), "draynor_manor_teleport_icon.png"),
+	BATTLEFRONT(TeleportType.ARCEUUS_MAGIC, "Battlefront", 23, new WorldPoint(1349, 3739, 0), "battlefront_teleport_icon.png"),
 	MIND_ALTAR(TeleportType.ARCEUUS_MAGIC, "Mind Altar", 28, new WorldPoint(2979, 3509, 0), "mind_altar_teleport_icon.png"),
 	SALVE_GRAVEYARD(TeleportType.ARCEUUS_MAGIC, "Salve Graveyard", 40, new WorldPoint(3433, 3461, 0), "salve_graveyard_teleport_icon.png"),
 	FENKENSTRAINS_CASTLE(TeleportType.ARCEUUS_MAGIC, "Fenkenstrain's Castle", 48, new WorldPoint(3548, 3528, 0), "fenkenstrains_castle_teleport_icon.png"),
@@ -114,7 +115,7 @@ enum TeleportLocationData
 
 	// Misc
 	XERICS_LOOKOUT(TeleportType.OTHER, "Xeric's Talisman", "Xeric's Lookout", new WorldPoint(1576, 3528, 0), "xerics_talisman_teleport_icon.png"),
-	XERICS_GLADE(TeleportType.OTHER, "Xeric's Talisman", "Xeric's Glade", new WorldPoint(1773, 3502, 0), "xerics_talisman_teleport_icon.png"),
+	XERICS_GLADE(TeleportType.OTHER, "Xeric's Talisman", "Xeric's Glade", new WorldPoint(1754, 3564, 0), "xerics_talisman_teleport_icon.png"),
 	XERICS_INFERNO(TeleportType.OTHER, "Xeric's Talisman", "Xeric's Inferno", new WorldPoint(1504, 3819, 0), "xerics_talisman_teleport_icon.png"),
 	XERICS_HEART(TeleportType.OTHER, "Xeric's Talisman", "Xeric's Heart", new WorldPoint(1641, 3670, 0), "xerics_talisman_teleport_icon.png"),
 	XERICS_HONOUR(TeleportType.OTHER, "Xeric's Talisman", "Xeric's Honour", new WorldPoint(1254, 3559, 0), "xerics_talisman_teleport_icon.png"),
@@ -131,12 +132,13 @@ enum TeleportLocationData
 	TROLL_STRONGHOLD_STONY_BASALT(TeleportType.OTHER, "Stony Basalt", "Troll Stronghold", new WorldPoint(2838, 3693, 0), "stony_basalt_teleport_icon.png"),
 	KHAREDSTS_MEMOIRS_HOSIDIUS(TeleportType.OTHER, "Kharedst's Memoirs", "Lunch by the Lancalliums (Hosidius)", new WorldPoint(1713, 3612, 0), "kharedsts_memoirs_teleport_icon.png"),
 	KHAREDSTS_MEMOIRS_PISCARILIUS(TeleportType.OTHER, "Kharedst's Memoirs", "The Fisher's Flute (Piscarilius)", new WorldPoint(1802, 3748, 0), "kharedsts_memoirs_teleport_icon.png"),
-	KHAREDSTS_MEMOIRS_SHAYZIEN(TeleportType.OTHER, "Kharedst's Memoirs", "Hearsay and History (Shayzien)", new WorldPoint(1476, 3580, 0), "kharedsts_memoirs_teleport_icon.png"),
+	KHAREDSTS_MEMOIRS_SHAYZIEN(TeleportType.OTHER, "Kharedst's Memoirs", "History and Hearsay (Shayzien)", new WorldPoint(1476, 3580, 0), "kharedsts_memoirs_teleport_icon.png"),
 	KHAREDSTS_MEMOIRS_LOVAKENGJ(TeleportType.OTHER, "Kharedst's Memoirs", "Jewelry of Jubilation (Lovakengj)", new WorldPoint(1544, 3762, 0), "kharedsts_memoirs_teleport_icon.png"),
 	KHAREDSTS_MEMOIRS_ARCEUUS(TeleportType.OTHER, "Kharedst's Memoirs", "A Dark Disposition (Arceuus)", new WorldPoint(1680, 3746, 0), "kharedsts_memoirs_teleport_icon.png"),
 	PHARAOHS_SCEPTRE_JALSAVRAH(TeleportType.OTHER, "Pharaoh's Sceptre", "Jalsavrah (Pyramid Plunder)", new WorldPoint(3288, 2795, 0), "pharaohs_sceptre_teleport_icon.png"),
 	PHARAOHS_SCEPTRE_JALEUSTROPHOS(TeleportType.OTHER, "Pharaoh's Sceptre", "Jaleustrophos (Agility Pyramid)", new WorldPoint(3341, 2827, 0), "pharaohs_sceptre_teleport_icon.png"),
 	PHARAOHS_SCEPTRE_JALDRAOCHT(TeleportType.OTHER, "Pharaoh's Sceptre", "Jaldraocht (Desert Treasure Pyramid)", new WorldPoint(3232, 2897, 0), "pharaohs_sceptre_teleport_icon.png"),
+	CAMULET_TEMPLE(TeleportType.OTHER, "Camulet", "Enakhra's Temple", new WorldPoint(3190, 2923, 0), "camulet_teleport_icon.png"),
 
 	// Wilderness
 	OBELISK_13(TeleportType.OTHER, "Obelisk", "13", new WorldPoint(3156, 3620, 0), "obelisk_icon.png"),
