@@ -60,7 +60,11 @@ public enum InventoryID
 	/**
 	 * Theater of Blood reward chest inventory (Raids 2)
 	 */
-	THEATRE_OF_BLOOD_CHEST(612);
+	THEATRE_OF_BLOOD_CHEST(612),
+	/**
+	 * Looting bag inventory
+	 */
+	LOOTING_BAG(516);
 
 	private final int id;
 
