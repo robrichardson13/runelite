@@ -5,9 +5,7 @@ import lombok.Value;
 @Value
 class UIMRecord {
     private final String title;
-    private final String subTitle;
     private final UIMItem[] items;
-    private final long timestamp;
 
     /**
      * Checks if this record matches specified id

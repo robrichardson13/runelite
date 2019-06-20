@@ -146,7 +146,7 @@ public class UIMPlugin extends Plugin
         }
 
         final UIMItem[] entries = buildEntries(stack(items));
-        SwingUtilities.invokeLater(() -> panel.add("Looting Bag", -1, entries));
+        SwingUtilities.invokeLater(() -> panel.add("Looting Bag", entries));
     }
 
     private UIMItem buildLootTrackerItem(int itemId, int quantity)

@@ -20,14 +20,13 @@ class UIMPanel extends PluginPanel
     // Handle loot boxes
     private final JPanel logsContainer = new JPanel();
 
-    private final JPanel actionsContainer = new JPanel();
-
-    private final JPanel overallPanel = new JPanel();
+//    private final JPanel overallPanel = new JPanel();
     private final JLabel overallIcon = new JLabel();
 
     // Log collection
-    private final List<UIMRecord> records = new ArrayList<>();
-    private final List<UIMBox> boxes = new ArrayList<>();
+//    private final List<UIMRecord> records = new ArrayList<>();
+    private UIMBox lootingBagBox;
+//    private final List<UIMBox> boxes = new ArrayList<>();
 
     private final ItemManager itemManager;
 
@@ -49,29 +48,9 @@ class UIMPanel extends PluginPanel
         layoutPanel.setLayout(new BoxLayout(layoutPanel, BoxLayout.Y_AXIS));
         add(layoutPanel, BorderLayout.NORTH);
 
-
-        // Create panel that will contain overall data
-        overallPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(5, 0, 0, 0, ColorScheme.DARK_GRAY_COLOR),
-                BorderFactory.createEmptyBorder(8, 10, 8, 10)
-        ));
-        overallPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        overallPanel.setLayout(new BorderLayout());
-        overallPanel.setVisible(false);
-
-        overallPanel.add(overallIcon, BorderLayout.WEST);
-
-        // Create popup menu
-//        final JPopupMenu popupMenu = new JPopupMenu();
-//        popupMenu.setBorder(new EmptyBorder(5, 5, 5, 5));
-//        popupMenu.add(reset);
-//        overallPanel.setComponentPopupMenu(popupMenu);
-
         // Create loot boxes wrapper
-//        logsContainer.setLayout(new BoxLayout(logsContainer, BoxLayout.Y_AXIS));
-//        layoutPanel.add(actionsContainer);
-        layoutPanel.add(overallPanel);
-//        layoutPanel.add(logsContainer);
+        logsContainer.setLayout(new BoxLayout(logsContainer, BoxLayout.Y_AXIS));
+        layoutPanel.add(logsContainer);
 
         // Add error pane
         errorPanel.setContent("UIM", "You have no looting bag or items in Zulrah");
@@ -83,16 +62,16 @@ class UIMPanel extends PluginPanel
         overallIcon.setIcon(new ImageIcon(img));
     }
 
-    void add(final String eventName, final int actorLevel, UIMItem[] items)
-    {
-        final String subTitle = actorLevel > -1 ? "(lvl-" + actorLevel + ")" : "";
-        final UIMRecord record = new UIMRecord(eventName, subTitle, items, System.currentTimeMillis());
-        records.add(record);
-        UIMBox box = buildBox(record);
-        if (box != null)
-        {
-            box.rebuild();
-//            updateOverall();
+    void add(final String eventName, UIMItem[] items) {
+        if(eventName.equals("Looting Bag")) {
+            final UIMRecord record = new UIMRecord(eventName, items);
+            if(lootingBagBox != null) {
+                lootingBagBox.clearRecords();
+                lootingBagBox.combine(record);
+            } else {
+                lootingBagBox = buildBox(record);
+            }
+            lootingBagBox.rebuild();
         }
     }
 
@@ -101,21 +80,16 @@ class UIMPanel extends PluginPanel
      */
     private void rebuild()
     {
-        logsContainer.removeAll();
-        boxes.clear();
-        int start = 0;
-//        if (!true && records.size() > 1000)
+//        logsContainer.removeAll();
+//        boxes.clear();
+//        int start = 0;
+//        for (int i = start; i < records.size(); i++)
 //        {
-//            start = records.size() - 1000;
+//            buildBox(records.get(i));
 //        }
-        for (int i = start; i < records.size(); i++)
-        {
-            buildBox(records.get(i));
-        }
-        boxes.forEach(UIMBox::rebuild);
-//        updateOverall();
-        logsContainer.revalidate();
-        logsContainer.repaint();
+//        boxes.forEach(UIMBox::rebuild);
+//        logsContainer.revalidate();
+//        logsContainer.repaint();
     }
 
     /**
@@ -125,79 +99,15 @@ class UIMPanel extends PluginPanel
      */
     private UIMBox buildBox(UIMRecord record)
     {
-//        // If this record is not part of current view, return
-//        if (!record.matches(currentView))
-//        {
-//            return null;
-//        }
-
-        // Group all similar loot together
-//        if (groupLoot)
-//        {
-            for (UIMBox box : boxes)
-            {
-                if (box.matches(record))
-                {
-                    box.combine(record);
-                    return box;
-                }
-            }
-//        }
-
         // Show main view
         remove(errorPanel);
-        actionsContainer.setVisible(true);
-        overallPanel.setVisible(true);
 
         // Create box
-        final UIMBox box = new UIMBox(itemManager, record.getTitle(), record.getSubTitle(), false);
+        final UIMBox box = new UIMBox(itemManager, record.getTitle());
         box.combine(record);
 
-        // Create popup menu
-        final JPopupMenu popupMenu = new JPopupMenu();
-        popupMenu.setBorder(new EmptyBorder(5, 5, 5, 5));
-        box.setComponentPopupMenu(popupMenu);
-
-        // Create reset menu
-        final JMenuItem reset = new JMenuItem("Reset");
-        reset.addActionListener(e ->
-        {
-            records.removeAll(box.getRecords());
-            boxes.remove(box);
-//            updateOverall();
-            logsContainer.remove(box);
-            logsContainer.repaint();
-
-//            LootTrackerClient client = plugin.getLootTrackerClient();
-//            // Without loot being grouped we have no way to identify single kills to be deleted
-//            if (client != null && groupLoot && config.syncPanel())
-//            {
-//                client.delete(box.getId());
-//            }
-        });
-
-        popupMenu.add(reset);
-
-        // Create details menu
-        final JMenuItem details = new JMenuItem("View details");
-        details.addActionListener(e ->
-        {
-//            currentView = record.getTitle();
-//            detailsTitle.setText(currentView);
-//            backBtn.setVisible(true);
-            rebuild();
-        });
-
-        popupMenu.add(details);
-
         // Add box to panel
-        boxes.add(box);
         logsContainer.add(box, 0);
-
-//        if (!true && boxes.size() > 10000)
-//        {
-//            logsContainer.remove(boxes.remove(0));
-//        }
 
         return box;
     }
