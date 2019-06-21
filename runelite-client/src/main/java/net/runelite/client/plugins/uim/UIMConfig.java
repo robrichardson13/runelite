@@ -26,4 +26,22 @@ public interface UIMConfig extends Config
     {
         return true;
     }
+
+    @ConfigItem(
+            keyName = "lootingBagData",
+            name = "",
+            description = "",
+            hidden = true
+    )
+    default String lootingBagData()
+    {
+        return "";
+    }
+
+    @ConfigItem(
+            keyName = "lootingBagData",
+            name = "",
+            description = ""
+    )
+    void setLootingBagData(String str);
 }

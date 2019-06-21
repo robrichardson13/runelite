@@ -1,5 +1,8 @@
 package net.runelite.client.plugins.uim;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.PluginPanel;
@@ -9,11 +12,15 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 class UIMPanel extends PluginPanel
 {
+    private static final Gson GSON = new Gson();
+
     // When there is no loot, display this
     private final PluginErrorPanel errorPanel = new PluginErrorPanel();
 
@@ -52,9 +59,18 @@ class UIMPanel extends PluginPanel
         logsContainer.setLayout(new BoxLayout(logsContainer, BoxLayout.Y_AXIS));
         layoutPanel.add(logsContainer);
 
-        // Add error pane
-        errorPanel.setContent("UIM", "You have no looting bag or items in Zulrah");
-        add(errorPanel);
+        final String savedJson = config.lootingBagData();
+        if(!savedJson.equals("")) {
+            Type listType = new TypeToken<ArrayList<UIMRecord>>(){}.getType();
+            List<UIMRecord> records = GSON.fromJson(savedJson, listType);
+            for (UIMRecord record : records) {
+                add(record.getTitle(), record.getItems(), false);
+            }
+        } else {
+            // Add error pane
+            errorPanel.setContent("UIM", "You have no looting bag or items in Zulrah");
+            add(errorPanel);
+        }
     }
 
     void loadHeaderIcon(BufferedImage img)
@@ -62,16 +78,28 @@ class UIMPanel extends PluginPanel
         overallIcon.setIcon(new ImageIcon(img));
     }
 
-    void add(final String eventName, UIMItem[] items) {
+    void add(final String eventName, UIMItem[] items, boolean clear) {
         if(eventName.equals("Looting Bag")) {
-            final UIMRecord record = new UIMRecord(eventName, items);
+            final UIMRecord newRecord = new UIMRecord(eventName, items);
+
             if(lootingBagBox != null) {
-                lootingBagBox.clearRecords();
-                lootingBagBox.combine(record);
+                if(clear) {
+                    lootingBagBox.clearRecords();
+                }
+
+                if(lootingBagBox.getNumberOfItems() < 28) {
+                    lootingBagBox.combine(newRecord);
+                }
             } else {
-                lootingBagBox = buildBox(record);
+                lootingBagBox = buildBox(newRecord);
             }
             lootingBagBox.rebuild();
+
+            logsContainer.revalidate();
+            logsContainer.repaint();
+
+            final String json = GSON.toJson(lootingBagBox.getRecords());
+            config.setLootingBagData(json);
         }
     }
 

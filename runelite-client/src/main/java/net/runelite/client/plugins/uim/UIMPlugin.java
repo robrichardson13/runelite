@@ -4,7 +4,10 @@ import com.google.inject.Inject;
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.api.coords.WorldArea;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ConfigChanged;
+import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.widgets.WidgetID;
 import net.runelite.client.config.ConfigManager;
@@ -14,6 +17,7 @@ import net.runelite.client.game.ItemStack;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.cluescrolls.clues.MapClue;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
@@ -32,6 +36,9 @@ import java.util.stream.Collectors;
 @Slf4j
 public class UIMPlugin extends Plugin
 {
+    private static final WorldArea WILDERNESS_ABOVE_GROUND = new WorldArea(2944, 3525, 448, 448, 0);
+    private static final WorldArea WILDERNESS_UNDERGROUND = new WorldArea(2944, 9920, 320, 442, 0);
+
     @Inject
     private ClientToolbar clientToolbar;
 
@@ -49,35 +56,7 @@ public class UIMPlugin extends Plugin
 
     private UIMPanel panel;
     private NavigationButton navButton;
-
-    private static Collection<ItemStack> stack(Collection<ItemStack> items)
-    {
-        final List<ItemStack> list = new ArrayList<>();
-
-        for (final ItemStack item : items)
-        {
-            int quantity = 0;
-            for (final ItemStack i : list)
-            {
-                if (i.getId() == item.getId())
-                {
-                    quantity = i.getQuantity();
-                    list.remove(i);
-                    break;
-                }
-            }
-            if (quantity > 0)
-            {
-                list.add(new ItemStack(item.getId(), item.getQuantity() + quantity, item.getLocation()));
-            }
-            else
-            {
-                list.add(item);
-            }
-        }
-
-        return list;
-    }
+    private ItemComposition usingItem;
 
     @Provides
     UIMConfig provideConfig(ConfigManager configManager)
@@ -88,7 +67,7 @@ public class UIMPlugin extends Plugin
     @Subscribe
     public void onConfigChanged(ConfigChanged event)
     {
-
+        log.debug("config changed");
     }
 
     @Override
@@ -113,6 +92,53 @@ public class UIMPlugin extends Plugin
     protected void shutDown()
     {
         clientToolbar.removeNavigation(navButton);
+    }
+
+    @Subscribe
+    public void onMenuOptionClicked(final MenuOptionClicked event)
+    {
+        if(!isInWilderness(client.getLocalPlayer().getWorldLocation())) {
+            return;
+        }
+        if (event.getMenuOption() != null && event.getMenuOption().equals("Use")) {
+            final ItemComposition itemComposition = itemManager.getItemComposition(event.getId());
+            if (itemComposition != null && itemComposition.getName().equals("Looting bag")) {
+                //Used an item on the Looting Bag
+                final ItemComposition usedItem = usingItem;
+                if(usedItem.getNote() == 799) { //Noted
+                    if(itemManager.getItemComposition(usedItem.getLinkedNoteId()).isTradeable()) {
+                        insertItemIntoBag(usedItem.getId());
+                    }
+                } else {
+                    if(usedItem.isTradeable()) {
+                        insertItemIntoBag(usedItem.getId());
+                    }
+                }
+                usingItem = null;
+            } else {
+                usingItem = itemComposition;
+            }
+        }
+    }
+
+    private static boolean isInWilderness(WorldPoint location) {
+        return WILDERNESS_ABOVE_GROUND.distanceTo2D(location) == 0 || WILDERNESS_UNDERGROUND.distanceTo2D(location) == 0;
+    }
+
+    public void insertItemIntoBag(int id) {
+        final ItemContainer container = client.getItemContainer(InventoryID.INVENTORY);
+        if(container == null) {
+            return;
+        }
+        final Item[] inventoryItems = container.getItems();
+        for(Item item : inventoryItems) {
+            if(item.getId() == id) {
+                final UIMItem newItem = buildLootTrackerItem(item.getId(), item.getQuantity());
+                log.debug("Insert item into the bag: ({}){}", item.getQuantity(), newItem.getName());
+                final UIMItem[] items = {newItem};
+                SwingUtilities.invokeLater(() -> panel.add("Looting Bag", items, false));
+            }
+        }
     }
 
     @Subscribe
@@ -145,15 +171,15 @@ public class UIMPlugin extends Plugin
             return;
         }
 
-        final UIMItem[] entries = buildEntries(stack(items));
-        SwingUtilities.invokeLater(() -> panel.add("Looting Bag", entries));
+        final UIMItem[] entries = buildEntries(items);
+        SwingUtilities.invokeLater(() -> panel.add("Looting Bag", entries, true));
     }
 
     private UIMItem buildLootTrackerItem(int itemId, int quantity)
     {
         final ItemComposition itemComposition = itemManager.getItemComposition(itemId);
 
-        return new UIMItem(itemId, itemComposition.getName(), quantity);
+        return new UIMItem(itemId, itemComposition.getName(), quantity, itemComposition.isStackable());
     }
 
     private UIMItem[] buildEntries(final Collection<ItemStack> itemStacks)

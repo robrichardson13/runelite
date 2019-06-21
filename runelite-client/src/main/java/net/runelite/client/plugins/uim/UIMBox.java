@@ -20,11 +20,15 @@ class UIMBox extends JPanel {
 
     private final JPanel itemContainer = new JPanel();
     private final ItemManager itemManager;
+
     @Getter(AccessLevel.PACKAGE)
     private final String id;
 
     @Getter
     private final List<UIMRecord> records = new ArrayList<>();
+
+    @Getter
+    private int numberOfItems = 0;
 
     UIMBox(
             final ItemManager itemManager,
@@ -60,20 +64,6 @@ class UIMBox extends JPanel {
     }
 
     /**
-     * Checks if this box matches specified id
-     *
-     * @param id other record id
-     * @return true if match is made
-     */
-    boolean matches(final String id) {
-        if (id == null) {
-            return true;
-        }
-
-        return this.id.equals(id);
-    }
-
-    /**
      * Adds an record's data into a loot box.
      * This will add new items to the list, re-calculating price and kill count.
      */
@@ -88,10 +78,10 @@ class UIMBox extends JPanel {
     void clearRecords()
     {
         records.clear();
+        numberOfItems = 0;
     }
 
-    void rebuild()
-    {
+    void rebuild() {
         buildItems();
         validate();
         repaint();
@@ -101,39 +91,35 @@ class UIMBox extends JPanel {
      * This method creates stacked items from the item list, calculates total price and then
      * displays all the items in the UI.
      */
-    private void buildItems()
-    {
+    private void buildItems() {
         final List<UIMItem> allItems = new ArrayList<>();
         final List<UIMItem> items = new ArrayList<>();
 
-        for (UIMRecord record : records)
-        {
+        for (UIMRecord record : records) {
             allItems.addAll(Arrays.asList(record.getItems()));
         }
 
-        for (final UIMItem entry : allItems)
-        {
-            int quantity = 0;
-            for (final UIMItem i : items)
-            {
-                if (i.getId() == entry.getId())
-                {
-                    quantity = i.getQuantity();
-                    items.remove(i);
-                    break;
+        for (final UIMItem entry : allItems) { //Loop through all items
+            boolean updated = false;
+            if(entry.isStackable()) { //This item is stackable, search all prior items to see if I should combine when them
+                int index = 0;
+                for (final UIMItem i : items) { //Loop through all inserted items
+                    if (i.getId() == entry.getId()) {
+                        final UIMItem updatedItem = new UIMItem(entry.getId(), entry.getName(), entry.getQuantity() + i.getQuantity(), entry.isStackable());
+                        items.set(index, updatedItem);
+                        updated = true;
+                        break;
+                    }
+                    index++;
                 }
             }
 
-            if (quantity > 0)
-            {
-                int newQuantity = entry.getQuantity() + quantity;
-                items.add(new UIMItem(entry.getId(), entry.getName(), newQuantity));
-            }
-            else
-            {
+            if(!updated) {
                 items.add(entry);
             }
         }
+
+        numberOfItems = items.size();
 
         // Calculates how many rows need to be display to fit all items
         final int rowSize = ((items.size() % ITEMS_PER_ROW == 0) ? 0 : 1) + items.size() / ITEMS_PER_ROW;
@@ -141,13 +127,11 @@ class UIMBox extends JPanel {
         itemContainer.removeAll();
         itemContainer.setLayout(new GridLayout(rowSize, ITEMS_PER_ROW, 1, 1));
 
-        for (int i = 0; i < rowSize * ITEMS_PER_ROW; i++)
-        {
+        for (int i = 0; i < rowSize * ITEMS_PER_ROW; i++) {
             final JPanel slotContainer = new JPanel();
             slotContainer.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
-            if (i < items.size())
-            {
+            if (i < items.size()) {
                 final UIMItem item = items.get(i);
                 final JLabel imageLabel = new JLabel();
                 imageLabel.setToolTipText(buildToolTip(item));
@@ -158,6 +142,11 @@ class UIMBox extends JPanel {
                 itemImage.addTo(imageLabel);
 
                 slotContainer.add(imageLabel);
+
+                // Create popup menu
+                final JPopupMenu popupMenu = new JPopupMenu();
+                popupMenu.setBorder(new EmptyBorder(5, 5, 5, 5));
+                slotContainer.setComponentPopupMenu(popupMenu);
             }
 
             itemContainer.add(slotContainer);

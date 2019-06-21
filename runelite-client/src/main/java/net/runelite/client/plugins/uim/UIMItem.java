@@ -12,4 +12,6 @@ class UIMItem
     private final String name;
     @Getter
     private final int quantity;
+    @Getter
+    private final boolean isStackable;
 }
