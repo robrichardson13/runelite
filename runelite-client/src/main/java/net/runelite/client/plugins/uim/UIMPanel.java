@@ -27,13 +27,10 @@ class UIMPanel extends PluginPanel
     // Handle loot boxes
     private final JPanel logsContainer = new JPanel();
 
-//    private final JPanel overallPanel = new JPanel();
     private final JLabel overallIcon = new JLabel();
 
     // Log collection
-//    private final List<UIMRecord> records = new ArrayList<>();
     private UIMBox lootingBagBox;
-//    private final List<UIMBox> boxes = new ArrayList<>();
 
     private final ItemManager itemManager;
 
@@ -101,23 +98,6 @@ class UIMPanel extends PluginPanel
             final String json = GSON.toJson(lootingBagBox.getRecords());
             config.setLootingBagData(json);
         }
-    }
-
-    /**
-     * Rebuilds all the boxes from scratch using existing listed records, depending on the grouping mode.
-     */
-    private void rebuild()
-    {
-//        logsContainer.removeAll();
-//        boxes.clear();
-//        int start = 0;
-//        for (int i = start; i < records.size(); i++)
-//        {
-//            buildBox(records.get(i));
-//        }
-//        boxes.forEach(UIMBox::rebuild);
-//        logsContainer.revalidate();
-//        logsContainer.repaint();
     }
 
     /**
