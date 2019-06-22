@@ -268,7 +268,11 @@ class LootTrackerBox extends JPanel
 			}
 		}
 
-		items.sort((i1, i2) -> Long.compare(i2.getPrice(), i1.getPrice()));
+		if(hidePricedItems) {
+			items.sort((i1, i2) -> Long.compare(i2.getAlchPrice(), i1.getAlchPrice()));
+        } else {
+			items.sort((i1, i2) -> Long.compare(i2.getPrice(), i1.getPrice()));
+		}
 
 		// Calculates how many rows need to be display to fit all items
 		final int rowSize = ((items.size() % ITEMS_PER_ROW == 0) ? 0 : 1) + items.size() / ITEMS_PER_ROW;
