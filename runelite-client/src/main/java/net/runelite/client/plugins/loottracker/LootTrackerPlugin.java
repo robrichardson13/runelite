@@ -509,7 +509,7 @@ public class LootTrackerPlugin extends Plugin
 		final int realItemId = itemComposition.getNote() != -1 ? itemComposition.getLinkedNoteId() : itemId;
 		final long price = (long) itemManager.getItemPrice(realItemId) * (long) quantity;
 		final boolean ignored = ignoredItems.contains(itemComposition.getName());
-		final long alchPrice = (long) itemComposition.getPrice() * (long) quantity * (long) Constants.HIGH_ALCHEMY_MULTIPLIER;
+		final int alchPrice = itemComposition.getPrice() <= 0 ? 0 : Math.round(itemComposition.getPrice() * Constants.HIGH_ALCHEMY_MULTIPLIER) * quantity;
 
 		return new LootTrackerItem(
 			itemId,

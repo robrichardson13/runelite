@@ -285,7 +285,7 @@ class LootTrackerBox extends JPanel
 			{
 				final LootTrackerItem item = items.get(i);
 				final JLabel imageLabel = new JLabel();
-				imageLabel.setToolTipText(buildToolTip(item));
+				imageLabel.setToolTipText(buildToolTip(item, hidePricedItems));
 				imageLabel.setVerticalAlignment(SwingConstants.CENTER);
 				imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -329,11 +329,16 @@ class LootTrackerBox extends JPanel
 		itemContainer.repaint();
 	}
 
-	private static String buildToolTip(LootTrackerItem item)
+	private static String buildToolTip(LootTrackerItem item, boolean hidePricedItems)
 	{
 		final String name = item.getName();
 		final int quantity = item.getQuantity();
-		final long price = item.getPrice();
+		long price;
+		if(hidePricedItems) {
+			price = item.getAlchPrice();
+		} else {
+			price = item.getPrice();
+		}
 		final String ignoredLabel = item.isIgnored() ? " - Ignored" : "";
 		return name + " x " + quantity + " (" + StackFormatter.quantityToStackSize(price) + ") " + ignoredLabel;
 	}
