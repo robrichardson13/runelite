@@ -14,6 +14,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 class UIMBox extends JPanel {
     private static final int ITEMS_PER_ROW = 4;
@@ -30,11 +31,18 @@ class UIMBox extends JPanel {
     @Getter
     private int numberOfItems = 0;
 
+    private Consumer<Integer> onItemToggle;
+    private Runnable onClear;
+
     UIMBox(
             final ItemManager itemManager,
-            final String id) {
+            final String id,
+            final Consumer<Integer> onItemToggle,
+            final Runnable onClear) {
         this.id = id;
         this.itemManager = itemManager;
+        this.onItemToggle = onItemToggle;
+        this.onClear = onClear;
 
         setLayout(new BorderLayout(0, 1));
         setBorder(new EmptyBorder(5, 0, 0, 0));
@@ -49,6 +57,17 @@ class UIMBox extends JPanel {
 
         logTitle.add(titleLabel, BorderLayout.WEST);
 
+        final JPopupMenu popupMenu = new JPopupMenu();
+        popupMenu.setBorder(new EmptyBorder(5, 5, 5, 5));
+        logTitle.setComponentPopupMenu(popupMenu);
+
+        if(id.equals("Death")) {
+            final JMenuItem toggle = new JMenuItem("Remove All");
+            toggle.addActionListener(e ->
+                    this.onClear.run());
+            popupMenu.add(toggle);
+        }
+
         add(logTitle, BorderLayout.NORTH);
         add(itemContainer, BorderLayout.CENTER);
     }
@@ -59,7 +78,7 @@ class UIMBox extends JPanel {
      * @param record loot record
      * @return true if match is made
      */
-    boolean matches(final UIMRecord record) {
+    private boolean matches(final UIMRecord record) {
         return record.getTitle().equals(id);
     }
 
@@ -100,12 +119,15 @@ class UIMBox extends JPanel {
         }
 
         for (final UIMItem entry : allItems) { //Loop through all items
+            if(entry.isIgnored()) {
+                continue;
+            }
             boolean updated = false;
             if(entry.isStackable()) { //This item is stackable, search all prior items to see if I should combine when them
                 int index = 0;
                 for (final UIMItem i : items) { //Loop through all inserted items
                     if (i.getId() == entry.getId()) {
-                        final UIMItem updatedItem = new UIMItem(entry.getId(), entry.getName(), entry.getQuantity() + i.getQuantity(), entry.isStackable());
+                        final UIMItem updatedItem = new UIMItem(entry.getId(), entry.getName(), entry.getQuantity() + i.getQuantity(), entry.isStackable(), entry.isIgnored());
                         items.set(index, updatedItem);
                         updated = true;
                         break;
@@ -143,10 +165,21 @@ class UIMBox extends JPanel {
 
                 slotContainer.add(imageLabel);
 
-                // Create popup menu
-                final JPopupMenu popupMenu = new JPopupMenu();
-                popupMenu.setBorder(new EmptyBorder(5, 5, 5, 5));
-                slotContainer.setComponentPopupMenu(popupMenu);
+                if(id.equals("Death")) {
+                    // Create popup menu
+                    final JPopupMenu popupMenu = new JPopupMenu();
+                    popupMenu.setBorder(new EmptyBorder(5, 5, 5, 5));
+                    slotContainer.setComponentPopupMenu(popupMenu);
+
+                    final JMenuItem toggle = new JMenuItem("Remove item");
+                    toggle.addActionListener(e ->
+                    {
+                        item.setIgnored(!item.isIgnored());
+                        onItemToggle.accept(item.getId());
+                    });
+
+                    popupMenu.add(toggle);
+                }
             }
 
             itemContainer.add(slotContainer);

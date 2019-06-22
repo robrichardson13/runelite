@@ -7,8 +7,10 @@ import net.runelite.api.*;
 import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ConfigChanged;
+import net.runelite.api.events.LocalPlayerDeath;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.WidgetLoaded;
+import net.runelite.api.vars.AccountType;
 import net.runelite.api.widgets.WidgetID;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -17,11 +19,9 @@ import net.runelite.client.game.ItemStack;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.plugins.cluescrolls.clues.MapClue;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
-import net.runelite.client.util.Text;
 
 import javax.swing.*;
 import java.awt.image.BufferedImage;
@@ -95,8 +95,10 @@ public class UIMPlugin extends Plugin
     }
 
     @Subscribe
-    public void onMenuOptionClicked(final MenuOptionClicked event)
-    {
+    public void onMenuOptionClicked(final MenuOptionClicked event) {
+//        if(client.getAccountType() != AccountType.ULTIMATE_IRONMAN) {
+//            return;
+//        }
         if(!isInWilderness(client.getLocalPlayer().getWorldLocation())) {
             return;
         }
@@ -125,7 +127,7 @@ public class UIMPlugin extends Plugin
         return WILDERNESS_ABOVE_GROUND.distanceTo2D(location) == 0 || WILDERNESS_UNDERGROUND.distanceTo2D(location) == 0;
     }
 
-    public void insertItemIntoBag(int id) {
+    private void insertItemIntoBag(int id) {
         final ItemContainer container = client.getItemContainer(InventoryID.INVENTORY);
         if(container == null) {
             return;
@@ -134,28 +136,25 @@ public class UIMPlugin extends Plugin
         for(Item item : inventoryItems) {
             if(item.getId() == id) {
                 final UIMItem newItem = buildLootTrackerItem(item.getId(), item.getQuantity());
-                log.debug("Insert item into the bag: ({}){}", item.getQuantity(), newItem.getName());
                 final UIMItem[] items = {newItem};
-                SwingUtilities.invokeLater(() -> panel.add("Looting Bag", items, false));
+                SwingUtilities.invokeLater(() -> panel.addLootingBagItems(items, false));
             }
         }
     }
 
     @Subscribe
-    public void onWidgetLoaded(WidgetLoaded event)
-    {
+    public void onWidgetLoaded(WidgetLoaded event) {
+//        if(client.getAccountType() != AccountType.ULTIMATE_IRONMAN) {
+//            return;
+//        }
         final ItemContainer container;
-        switch (event.getGroupId())
-        {
-            case (WidgetID.LOOTING_BAG_GROUP_ID):
-                container = client.getItemContainer(InventoryID.LOOTING_BAG);
-                break;
-            default:
-                return;
+        if (event.getGroupId() == WidgetID.LOOTING_BAG_GROUP_ID) {
+            container = client.getItemContainer(InventoryID.LOOTING_BAG);
+        } else {
+            return;
         }
 
-        if (container == null)
-        {
+        if (container == null) {
             return;
         }
 
@@ -165,21 +164,76 @@ public class UIMPlugin extends Plugin
                 .map(item -> new ItemStack(item.getId(), item.getQuantity(), client.getLocalPlayer().getLocalLocation()))
                 .collect(Collectors.toList());
 
-        if (items.isEmpty())
-        {
-            log.debug("No items to find for Event: {} | Container: {}", "Looting bag", container);
+        if (items.isEmpty()) {
             return;
         }
 
         final UIMItem[] entries = buildEntries(items);
-        SwingUtilities.invokeLater(() -> panel.add("Looting Bag", entries, true));
+        SwingUtilities.invokeLater(() -> panel.addLootingBagItems(entries, true));
+    }
+
+    @Subscribe
+    public void onLocalPlayerDeath(LocalPlayerDeath death) {
+        onDeath(client.isInInstancedRegion());
+    }
+
+    private void onDeath(boolean instanced) {
+//        if(client.getAccountType() != AccountType.ULTIMATE_IRONMAN) {
+//            return;
+//        }
+        final ItemContainer inventoryContainer = client.getItemContainer(InventoryID.INVENTORY);
+        final ItemContainer equipmentContainer = client.getItemContainer(InventoryID.EQUIPMENT);
+
+        if(inventoryContainer != null) {
+            final Collection<ItemStack> inventoryItems = createList(inventoryContainer, instanced);
+            if (!inventoryItems.isEmpty()) {
+                final UIMItem[] entries = buildEntries(inventoryItems);
+                SwingUtilities.invokeLater(() -> panel.addDeathItems(entries));
+            }
+        }
+
+        if(equipmentContainer != null) {
+            final Collection<ItemStack> equiptmentItems = createList(equipmentContainer, instanced);
+            if (!equiptmentItems.isEmpty()) {
+                final UIMItem[] entries = buildEntries(equiptmentItems);
+                SwingUtilities.invokeLater(() -> panel.addDeathItems(entries));
+            }
+        }
+
+        SwingUtilities.invokeLater(() -> panel.diedWithLootingBag());
+    }
+
+    private Collection<ItemStack> createList(ItemContainer container, boolean instanced) {
+        if(!instanced) {
+            return Arrays.stream(container.getItems())
+                    .filter(item -> {
+                        if(item.getId() <= 0) { return false; }
+                        final ItemComposition composition = itemManager.getItemComposition(item.getId());
+                        if(composition.getName().equals("Looting bag")) { return false; } //Don't keep looting bag item
+                        if(composition.getNote() == 799) { //Noted
+                            return itemManager.getItemComposition(composition.getLinkedNoteId()).isTradeable();
+                        } else {
+                            return composition.isTradeable();
+                        }
+                    })
+                    .map(item -> new ItemStack(item.getId(), item.getQuantity(), client.getLocalPlayer().getLocalLocation()))
+                    .collect(Collectors.toList());
+        }
+        return Arrays.stream(container.getItems())
+                .filter(item -> {
+                    if(item.getId() <= 0) { return false; }
+                    final ItemComposition composition = itemManager.getItemComposition(item.getId());
+                    return !composition.getName().equals("Looting bag"); //Don't keep looting bag item
+                })
+                .map(item -> new ItemStack(item.getId(), item.getQuantity(), client.getLocalPlayer().getLocalLocation()))
+                .collect(Collectors.toList());
     }
 
     private UIMItem buildLootTrackerItem(int itemId, int quantity)
     {
         final ItemComposition itemComposition = itemManager.getItemComposition(itemId);
 
-        return new UIMItem(itemId, itemComposition.getName(), quantity, itemComposition.isStackable());
+        return new UIMItem(itemId, itemComposition.getName(), quantity, itemComposition.isStackable(), false);
     }
 
     private UIMItem[] buildEntries(final Collection<ItemStack> itemStacks)

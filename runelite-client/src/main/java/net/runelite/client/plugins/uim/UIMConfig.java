@@ -44,4 +44,22 @@ public interface UIMConfig extends Config
             description = ""
     )
     void setLootingBagData(String str);
+
+    @ConfigItem(
+            keyName = "deathData",
+            name = "",
+            description = "",
+            hidden = true
+    )
+    default String deathData()
+    {
+        return "";
+    }
+
+    @ConfigItem(
+            keyName = "deathData",
+            name = "",
+            description = ""
+    )
+    void setDeathData(String str);
 }
