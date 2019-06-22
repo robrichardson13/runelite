@@ -4,13 +4,17 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.game.ItemManager;
+import net.runelite.client.plugins.screenmarkers.ScreenMarkerPlugin;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.PluginErrorPanel;
+import net.runelite.client.util.ImageUtil;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -19,6 +23,11 @@ import java.util.List;
 @Slf4j
 class UIMPanel extends PluginPanel
 {
+    private static final ImageIcon ADD_ICON;
+    private static final ImageIcon ADD_HOVER_ICON;
+
+    private final JLabel addMarker = new JLabel(ADD_ICON);
+
     private static final Gson GSON = new Gson();
 
     private final PluginErrorPanel errorPanel = new PluginErrorPanel();
@@ -34,6 +43,13 @@ class UIMPanel extends PluginPanel
     private final UIMPlugin plugin;
     private final UIMConfig config;
 
+    static
+    {
+        final BufferedImage addIcon = ImageUtil.getResourceStreamFromClass(ScreenMarkerPlugin.class, "add_icon.png");
+        ADD_ICON = new ImageIcon(addIcon);
+        ADD_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(addIcon, 0.53f));
+    }
+
     UIMPanel(final UIMPlugin plugin, final ItemManager itemManager, final UIMConfig config)
     {
         this.itemManager = itemManager;
@@ -44,10 +60,38 @@ class UIMPanel extends PluginPanel
         setBackground(ColorScheme.DARK_GRAY_COLOR);
         setLayout(new BorderLayout());
 
+        JPanel northPanel = new JPanel(new BorderLayout());
+        northPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        northPanel.setPreferredSize(new Dimension(0, 30));
+        northPanel.setBorder(new EmptyBorder(5, 5, 5, 10));
+
+        northPanel.add(addMarker, BorderLayout.EAST);
+        add(northPanel, BorderLayout.NORTH);
+
+        addMarker.setToolTipText("Create death items");
+        addMarker.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent mouseEvent) {
+                plugin.addDeath();
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent mouseEvent)
+            {
+                addMarker.setIcon(ADD_HOVER_ICON);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent mouseEvent)
+            {
+                addMarker.setIcon(ADD_ICON);
+            }
+        });
+
         // Create layout panel for wrapping
         final JPanel layoutPanel = new JPanel();
         layoutPanel.setLayout(new BoxLayout(layoutPanel, BoxLayout.Y_AXIS));
-        add(layoutPanel, BorderLayout.NORTH);
+        add(layoutPanel, BorderLayout.CENTER);
 
         // Create loot boxes wrapper
         logsContainer.setLayout(new BoxLayout(logsContainer, BoxLayout.Y_AXIS));
@@ -126,7 +170,7 @@ class UIMPanel extends PluginPanel
 
     void diedWithLootingBag() {
         //Take all the records from the looting bag and insert them into the death box
-        if(lootingBagBox.getRecords().size() == 0) {
+        if(lootingBagBox == null || lootingBagBox.getRecords().size() == 0) {
             return;
         }
 
@@ -183,7 +227,7 @@ class UIMPanel extends PluginPanel
         logsContainer.repaint();
 
         if(deathBox == null && lootingBagBox == null) {
-            errorPanel.setContent("UIM", "You have no looting bag or death items");
+            errorPanel.setContent("Items", "You have no looting bag or death items");
             add(errorPanel);
         }
     }

@@ -12,6 +12,7 @@ import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.vars.AccountType;
 import net.runelite.api.widgets.WidgetID;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
@@ -53,6 +54,9 @@ public class UIMPlugin extends Plugin
 
     @Inject
     private Client client;
+
+    @Inject
+	private ClientThread clientThread;
 
     private UIMPanel panel;
     private NavigationButton navButton;
@@ -172,12 +176,17 @@ public class UIMPlugin extends Plugin
         SwingUtilities.invokeLater(() -> panel.addLootingBagItems(entries, true));
     }
 
-    @Subscribe
-    public void onLocalPlayerDeath(LocalPlayerDeath death) {
-        onDeath(client.isInInstancedRegion());
+//    @Subscribe
+//    public void onLocalPlayerDeath(LocalPlayerDeath death) {
+//        onDeath();
+//    }
+
+    public void addDeath() {
+        clientThread.invoke(this::onDeath);
     }
 
-    private void onDeath(boolean instanced) {
+    private void onDeath() {
+        final boolean instanced = client.isInInstancedRegion();
 //        if(client.getAccountType() != AccountType.ULTIMATE_IRONMAN) {
 //            return;
 //        }
