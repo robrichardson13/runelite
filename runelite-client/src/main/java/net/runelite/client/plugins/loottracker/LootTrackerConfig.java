@@ -70,4 +70,14 @@ public interface LootTrackerConfig extends Config
 	{
 		return true;
 	}
+
+	@ConfigItem(
+			keyName = "hideUnderValue",
+			name = "Hide < Value",
+			description = "Configures hidden loot items under HA value"
+	)
+	default int getHideUnderValue()
+	{
+		return 0;
+	}
 }

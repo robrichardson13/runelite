@@ -69,6 +69,10 @@ class LootTrackerPanel extends PluginPanel
 	private static final ImageIcon VISIBLE_ICON_HOVER;
 	private static final ImageIcon INVISIBLE_ICON;
 	private static final ImageIcon INVISIBLE_ICON_HOVER;
+	private static final ImageIcon PRICE_ICON;
+	private static final ImageIcon PRICE_ICON_HOVER;
+	private static final ImageIcon PRICE_ICON_HIDDEN;
+	private static final ImageIcon PRICE_ICON_HIDDEN_HOVER;
 
 	private static final String HTML_LABEL_TEMPLATE =
 		"<html><body style='color:%s'>%s<span style='color:white'>%s</span></body></html>";
@@ -83,6 +87,7 @@ class LootTrackerPanel extends PluginPanel
 	private final JPanel overallPanel = new JPanel();
 	private final JLabel overallKillsLabel = new JLabel();
 	private final JLabel overallGpLabel = new JLabel();
+	private final JLabel overallHALabel = new JLabel();
 	private final JLabel overallIcon = new JLabel();
 
 	// Details and navigation
@@ -90,6 +95,7 @@ class LootTrackerPanel extends PluginPanel
 	private final JLabel detailsTitle = new JLabel();
 	private final JLabel backBtn = new JLabel();
 	private final JLabel viewHiddenBtn = new JLabel();
+	private final JLabel viewPriceBtn = new JLabel();
 	private final JLabel singleLootBtn = new JLabel();
 	private final JLabel groupedLootBtn = new JLabel();
 
@@ -103,6 +109,7 @@ class LootTrackerPanel extends PluginPanel
 
 	private boolean groupLoot;
 	private boolean hideIgnoredItems;
+	private boolean hidePricedItems;
 	private String currentView;
 
 	static
@@ -112,6 +119,8 @@ class LootTrackerPanel extends PluginPanel
 		final BufferedImage backArrowImg = ImageUtil.getResourceStreamFromClass(LootTrackerPlugin.class, "back_icon.png");
 		final BufferedImage visibleImg = ImageUtil.getResourceStreamFromClass(LootTrackerPlugin.class, "visible_icon.png");
 		final BufferedImage invisibleImg = ImageUtil.getResourceStreamFromClass(LootTrackerPlugin.class, "invisible_icon.png");
+		final BufferedImage priceImg = ImageUtil.getResourceStreamFromClass(LootTrackerPlugin.class, "visible_icon.png");
+		final BufferedImage priceImgHidden = ImageUtil.getResourceStreamFromClass(LootTrackerPlugin.class, "invisible_icon.png");
 
 		SINGLE_LOOT_VIEW = new ImageIcon(singleLootImg);
 		SINGLE_LOOT_VIEW_FADED = new ImageIcon(ImageUtil.alphaOffset(singleLootImg, -180));
@@ -129,6 +138,12 @@ class LootTrackerPanel extends PluginPanel
 
 		INVISIBLE_ICON = new ImageIcon(invisibleImg);
 		INVISIBLE_ICON_HOVER = new ImageIcon(ImageUtil.alphaOffset(invisibleImg, -220));
+
+		PRICE_ICON = new ImageIcon(priceImg);
+		PRICE_ICON_HOVER = new ImageIcon(ImageUtil.alphaOffset(invisibleImg, -220));
+
+		PRICE_ICON_HIDDEN = new ImageIcon(priceImgHidden);
+		PRICE_ICON_HIDDEN_HOVER = new ImageIcon(ImageUtil.alphaOffset(invisibleImg, -220));
 	}
 
 	LootTrackerPanel(final LootTrackerPlugin plugin, final ItemManager itemManager, final LootTrackerConfig config)
@@ -137,6 +152,7 @@ class LootTrackerPanel extends PluginPanel
 		this.plugin = plugin;
 		this.config = config;
 		this.hideIgnoredItems = true;
+		this.hidePricedItems = false;
 
 		setBorder(new EmptyBorder(6, 6, 6, 6));
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -225,9 +241,33 @@ class LootTrackerPanel extends PluginPanel
 			}
 		});
 
+		viewPriceBtn.setIcon(PRICE_ICON);
+		viewPriceBtn.setToolTipText("Show items with price filter");
+		viewPriceBtn.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mousePressed(MouseEvent mouseEvent)
+			{
+				changePricedItemHiding(!hidePricedItems);
+			}
+
+			@Override
+			public void mouseExited(MouseEvent mouseEvent)
+			{
+				viewPriceBtn.setIcon(hidePricedItems ? PRICE_ICON_HIDDEN : PRICE_ICON);
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent mouseEvent)
+			{
+				viewPriceBtn.setIcon(hidePricedItems ? PRICE_ICON_HIDDEN_HOVER : PRICE_ICON_HOVER);
+			}
+		});
+
 		viewControls.add(groupedLootBtn);
 		viewControls.add(singleLootBtn);
 		viewControls.add(viewHiddenBtn);
+		viewControls.add(viewPriceBtn);
 		changeGrouping(true);
 		changeItemHiding(true);
 
@@ -280,12 +320,14 @@ class LootTrackerPanel extends PluginPanel
 		// Add icon and contents
 		final JPanel overallInfo = new JPanel();
 		overallInfo.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		overallInfo.setLayout(new GridLayout(2, 1));
+		overallInfo.setLayout(new GridLayout(3, 1));
 		overallInfo.setBorder(new EmptyBorder(2, 10, 2, 0));
 		overallKillsLabel.setFont(FontManager.getRunescapeSmallFont());
 		overallGpLabel.setFont(FontManager.getRunescapeSmallFont());
+		overallHALabel.setFont(FontManager.getRunescapeSmallFont());
 		overallInfo.add(overallKillsLabel);
 		overallInfo.add(overallGpLabel);
+		overallInfo.add(overallHALabel);
 		overallPanel.add(overallIcon, BorderLayout.WEST);
 		overallPanel.add(overallInfo, BorderLayout.CENTER);
 
@@ -382,6 +424,13 @@ class LootTrackerPanel extends PluginPanel
 		viewHiddenBtn.setIcon(hideIgnoredItems ? VISIBLE_ICON : INVISIBLE_ICON);
 	}
 
+	private void changePricedItemHiding(boolean hide)
+	{
+		hidePricedItems = hide;
+		rebuild();
+		viewPriceBtn.setIcon(hidePricedItems ? PRICE_ICON : PRICE_ICON_HIDDEN);
+	}
+
 	/**
 	 * After an item changed it's ignored state, iterate all the records and make
 	 * sure all items of the same name also get updated
@@ -456,7 +505,7 @@ class LootTrackerPanel extends PluginPanel
 		overallPanel.setVisible(true);
 
 		// Create box
-		final LootTrackerBox box = new LootTrackerBox(itemManager, record.getTitle(), record.getSubTitle(), hideIgnoredItems, plugin::toggleItem);
+		final LootTrackerBox box = new LootTrackerBox(itemManager, record.getTitle(), record.getSubTitle(), hideIgnoredItems, hidePricedItems, config.getHideUnderValue(), plugin::toggleItem);
 		box.combine(record);
 
 		// Create popup menu
@@ -512,6 +561,7 @@ class LootTrackerPanel extends PluginPanel
 	{
 		long overallKills = 0;
 		long overallGp = 0;
+		long overallHA = 0;
 
 		for (LootTrackerRecord record : records)
 		{
@@ -530,7 +580,13 @@ class LootTrackerPanel extends PluginPanel
 					continue;
 				}
 
+				if(hidePricedItems && item.getAlchPrice() <= config.getHideUnderValue()) {
+					present--;
+					continue;
+				}
+
 				overallGp += item.getPrice();
+				overallHA += item.getAlchPrice();
 			}
 
 			if (present > 0)
@@ -541,6 +597,7 @@ class LootTrackerPanel extends PluginPanel
 
 		overallKillsLabel.setText(htmlLabel("Total count: ", overallKills));
 		overallGpLabel.setText(htmlLabel("Total value: ", overallGp));
+		overallHALabel.setText(htmlLabel("Total HA value: ", overallHA));
 	}
 
 	private static String htmlLabel(String key, long value)

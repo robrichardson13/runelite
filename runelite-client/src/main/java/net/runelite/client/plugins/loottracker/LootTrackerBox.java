@@ -68,6 +68,8 @@ class LootTrackerBox extends JPanel
 
 	private long totalPrice;
 	private boolean hideIgnoredItems;
+	private boolean hidePricedItems;
+	private int hideUnderValue;
 	private BiConsumer<String, Boolean> onItemToggle;
 
 	LootTrackerBox(
@@ -75,12 +77,16 @@ class LootTrackerBox extends JPanel
 		final String id,
 		@Nullable final String subtitle,
 		final boolean hideIgnoredItems,
+		final boolean hidePricedItems,
+		final int hideUnderValue,
 		final BiConsumer<String, Boolean> onItemToggle)
 	{
 		this.id = id;
 		this.itemManager = itemManager;
 		this.onItemToggle = onItemToggle;
 		this.hideIgnoredItems = hideIgnoredItems;
+		this.hidePricedItems = hidePricedItems;
+		this.hideUnderValue = hideUnderValue;
 
 		setLayout(new BorderLayout(0, 1));
 		setBorder(new EmptyBorder(5, 0, 0, 0));
@@ -209,6 +215,17 @@ class LootTrackerBox extends JPanel
 			}
 		}
 
+		if(hidePricedItems) {
+			/* If all the items in this box are under the price */
+			boolean hideBox = allItems.stream().allMatch(item -> item.getAlchPrice() <= hideUnderValue);
+			setVisible(!hideBox);
+
+			if (hideBox)
+			{
+				return;
+			}
+		}
+
 		for (final LootTrackerItem entry : allItems)
 		{
 			if (entry.isIgnored() && hideIgnoredItems)
@@ -216,7 +233,15 @@ class LootTrackerBox extends JPanel
 				continue;
 			}
 
-			totalPrice += entry.getPrice();
+			if(hidePricedItems && entry.getAlchPrice() <= hideUnderValue) {
+				continue;
+			}
+
+			if(hidePricedItems) {
+				totalPrice += entry.getAlchPrice();
+			} else {
+				totalPrice += entry.getPrice();
+			}
 
 			int quantity = 0;
 			for (final LootTrackerItem i : items)
@@ -233,8 +258,9 @@ class LootTrackerBox extends JPanel
 			{
 				int newQuantity = entry.getQuantity() + quantity;
 				long pricePerItem = entry.getPrice() == 0 ? 0 : (entry.getPrice() / entry.getQuantity());
+				long alchPricePerItem = entry.getAlchPrice() == 0 ? 0 : (entry.getAlchPrice() / entry.getQuantity());
 
-				items.add(new LootTrackerItem(entry.getId(), entry.getName(), newQuantity, pricePerItem * newQuantity, entry.isIgnored()));
+				items.add(new LootTrackerItem(entry.getId(), entry.getName(), newQuantity, pricePerItem * newQuantity, alchPricePerItem * newQuantity, entry.isIgnored()));
 			}
 			else
 			{
