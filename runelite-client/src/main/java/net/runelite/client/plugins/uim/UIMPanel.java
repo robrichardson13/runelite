@@ -33,6 +33,7 @@ class UIMPanel extends PluginPanel
     private final PluginErrorPanel errorPanel = new PluginErrorPanel();
     private final JPanel logsContainer = new JPanel();
     private final JLabel overallIcon = new JLabel();
+    private JPanel topContainer;
 
     // Log collection
     private UIMBox lootingBagBox;
@@ -60,13 +61,12 @@ class UIMPanel extends PluginPanel
         setBackground(ColorScheme.DARK_GRAY_COLOR);
         setLayout(new BorderLayout());
 
-        JPanel northPanel = new JPanel(new BorderLayout());
-        northPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        northPanel.setPreferredSize(new Dimension(0, 30));
-        northPanel.setBorder(new EmptyBorder(5, 5, 5, 10));
-
-        northPanel.add(addMarker, BorderLayout.EAST);
-        add(northPanel, BorderLayout.NORTH);
+        topContainer = new JPanel(new BorderLayout());
+        topContainer.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        topContainer.setPreferredSize(new Dimension(0, 30));
+        topContainer.setBorder(new EmptyBorder(5, 5, 5, 10));
+//
+        topContainer.add(addMarker, BorderLayout.EAST);
 
         addMarker.setToolTipText("Create death items");
         addMarker.addMouseListener(new MouseAdapter() {
@@ -91,11 +91,12 @@ class UIMPanel extends PluginPanel
         // Create layout panel for wrapping
         final JPanel layoutPanel = new JPanel();
         layoutPanel.setLayout(new BoxLayout(layoutPanel, BoxLayout.Y_AXIS));
-        add(layoutPanel, BorderLayout.CENTER);
+        add(layoutPanel, BorderLayout.NORTH);
 
         // Create loot boxes wrapper
         logsContainer.setLayout(new BoxLayout(logsContainer, BoxLayout.Y_AXIS));
         layoutPanel.add(logsContainer);
+        logsContainer.add(topContainer);
 
         // Re-populate saved looting bag and death data
         boolean recordsExist = false;
@@ -120,7 +121,7 @@ class UIMPanel extends PluginPanel
         }
 
         if(!recordsExist) {
-            errorPanel.setContent("UIM", "You have no looting bag or death items");
+            errorPanel.setContent("Items", "You have no looting bag or death items");
             add(errorPanel);
         }
     }
@@ -161,8 +162,8 @@ class UIMPanel extends PluginPanel
         }
         deathBox.rebuild();
 
-        deathBox.revalidate();
-        deathBox.repaint();
+        logsContainer.revalidate();
+        logsContainer.repaint();
 
         final String json = GSON.toJson(deathBox.getRecords());
         config.setDeathData(json);
@@ -207,6 +208,7 @@ class UIMPanel extends PluginPanel
 
     private void onClear() {
         logsContainer.removeAll();
+        logsContainer.add(topContainer);
 
         List<UIMRecord> lootingBagRecords;
         if(lootingBagBox != null) {
@@ -234,6 +236,7 @@ class UIMPanel extends PluginPanel
 
     private void toggleItem(Integer id) {
         logsContainer.removeAll();
+        logsContainer.add(topContainer);
 
         final List<UIMRecord> deathRecords = new ArrayList<>(deathBox.getRecords());
         List<UIMRecord> lootingBagRecords;
@@ -277,7 +280,7 @@ class UIMPanel extends PluginPanel
         logsContainer.repaint();
 
         if(deathBox == null && lootingBagBox == null) {
-            errorPanel.setContent("UIM", "You have no looting bag or death items");
+            errorPanel.setContent("Items", "You have no looting bag or death items");
             add(errorPanel);
         }
     }
